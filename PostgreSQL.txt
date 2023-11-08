@@ -1,0 +1,381 @@
+//PostgreSQL
+
+Create Database "Nombre"
+
+Drop database if exists "Nombre"
+
+CREATE TABLE "nombre" (
+    idpersona SERIAL PRIMARY KEY NOT NULL,
+    nombre VARCHAR(25),
+    apellido VARCHAR(25),
+    telefono CHAR(10)
+);
+
+--TIPOS DE DATOS EN POSTGRETSQL
+boolean=true or false
+character(n)=cadena de tamaño fijo
+date=fecha
+Float=flotante
+Int,Integer=numero entero
+decimal=numero exacto
+time=tiempo 
+varchar(n)=cadena de tamaño variable
+
+--INSERCION DE DATOS
+insert into "nombre tabla" values ('1','pedro','123456');
+
+--ACTUALIZAR UN REGISTRO
+update "nombre tabla" set cedula='123'
+where idpersona = '1'
+
+--BORRAR REGISTROS DE UNA TABLA
+  delete from persona
+  where nombre ='Daniel'
+
+
+
+--CONSULTAS -SELECT
+  SELECT * FROM PERSONA
+  select (nombre,cedula) as datos from persona;
+  select nombre from persona
+  where idpersona ='3'; 
+
+--WHERE Y CONDICIONALES
+ Select * from persona
+ where idpersona >2;
+
+select * from persona
+where nombre != 'Eduardo';
+
+--ORDENAR REGISTROS(ORDER BY)
+
+select * from persona order by idpersona desc
+select * from persona order by 3 -->Ordena por numero de columna
+
+--Clausula LIKE
+
+select * from persona
+where nombre like '%E%' ->Cualquier texto que tenga la letra e y que pueda tener texto a ala Derecha o Izquierda
+
+--LIMIT Y OFFSET
+
+select * from persona limit 3 offset=4-->Lo que hace es que offset establece de que registro iniciar y el limit los que va a mostrar
+
+
+
+--MODIFICAR UNA TABLA(ALTER)
+  Alter Table persona
+  ADD Column Test varchar(20)
+
+Alter Table persona
+Rename Column Test to Test2
+
+Alter Table persona
+Drop Column Test2
+
+ 	
+
+--CLAVE PRIMARIA
+Alter table persona
+add primary key(idpersona)
+--CLAVE FORANEA
+ALTER TABLE factura
+ADD CONSTRAINT fk_factura_persona
+FOREIGN KEY (idpersona)
+REFERENCES persona(idpersona);
+
+CREATE TABLE clientes (
+    dni varchar(9) PRIMARY KEY,
+    nombre varchar(50)
+)
+
+--AUTOINCREMENTAR(SERIAL)
+
+create table test(
+idtest serial primary key not null,
+nombre varchar(20),
+telefono varchar(10)
+)
+
+--DROP Y TRUNCATE
+DROP elimina, no solo todos los datos de una tabla, sino que también elimina la estructura de la tabla de forma permanente de todas las referencias.
+TRUNCATE solo elimina todas las filas de una tabla, y conserva la estructura de la tabla y sus referencias.
+
+drop table test
+truncate table test restart identity
+
+--VALORES POR DEFAULT
+Create table test(
+idtest serial primary key not null,
+nombre varchar(20),
+telelfono varchar(15) default 'Desconocido'
+);
+--COLUMNAS CALCULADAS
+select Nombre,Salario,(Salario+1500) as Bono from plantilla
+
+
+
+--COUNT
+
+Select Count(*) from persona  ->Cuenta todos los registros que tenemos en la tabla
+Select Count(nombre) from persona
+
+Select Count(nombre) from persona
+where nombre like '%E%'
+
+--SUM
+Select SUM(Salario) as Total_Salario from persona
+
+Select SUM(Salario) from persona
+Where nombre like '%a%'
+
+--FUNCIONES max(),Min() y Group by
+
+select min(salario) from persona
+select max(salario) from persona
+
+select nombre , max(salario) from persona
+group by nombre
+
+--FUNCION PROMEDIO AVG
+select AVG(Salario) as Salario_Promedio from persona 
+select nombre,AVG(Salario) from persona
+group by nombre
+
+--FILTRADO DE GRUPOS-HAVING 
+
+select nombre ,salario from persona
+where nombre ='Jose'
+group by nombre,salario
+having salario >3000
+
+--VER REGISTROS DIFERENTES -DISTINCT
+
+
+select distinct nombre persona ->Me trae todas las personas sin repetir nombre
+
+select count(distinct nombre) from persona -->Me tendria que traer un Numero de los nombres
+
+--VER UN RANGO DE REGISTROS-BETWEEN
+select * from persona
+where salario between 100 and 200 -->Muestra salarios entre 100 -200
+
+select * from persona
+where salario not between 100 and 200 -->Muestra salarios que queden fuera de 100-200
+
+
+--RESTRINGIR VALORES EN UNA TABLA---UNIQUE
+
+Alter table persona
+add constraint UQ_Salario -->Que solo alla salarios unicos
+Unique (salario)
+
+--COMO ELIMINAR UNA RESTRICCION--DROP CONSTRAINT
+
+Alter table persona
+drop constraint uq_salario
+
+--Como relacionar dos tablas con una llave foranea-FOREIGN KEY
+alter table persona
+add constraint FKtest
+foreign key (CodigoEmpresa)
+references empresas(codigo)
+
+--CREACION UNA FUNCION( DE PROCEDIMIENTOS ALMACENADOS(STORED PROCEDURE))
+
+create or replace fuction Suma(x int ,y integer)
+returns integer as
+$$
+
+select x + y;
+
+$$
+Language SQL
+
+Select Suma(1,2);
+
+
+//OPCION 2
+create function BuscarSalario(varchar)returns integer as
+$$
+
+select salario from persona
+where nombre=$1;-->Parametro en la posicion 1
+
+
+$$
+Languaje SQL
+
+--FUNCION SIN PARAMETROS Y SIN RETORNAR RESULTADO
+create function InsertarPersona() returns void
+as
+$$
+	insert into persona values('Juan','1','100')
+	insert into persona values('Juan','2','200')
+	insert into persona values('Juan','3','150')
+$$
+Language SQL
+
+---CLAUSULA TOP(No existe )
+se utiliza esta
+select * from persona
+Limit 2
+
+
+
+--TRIGGER(Como hacer un disparador y su funcion)
+
+create function SP_test returns Trigger
+as
+$$
+ begin 
+ insert into "Log_Triggers"  values(old.nombre,);
+ return new;
+  End
+
+$$
+Language plpgsql;
+
+
+//Triger
+create trigger TR_update before Update on persona
+for each row
+execute procedure SP_test();
+
+--COMO USAR LA CLAUSULA AFTER PARA EL INSERT (TRIGGER)
+create function SP_TR_Insert()returns Trigger
+as
+$$
+	Declare 
+	Usuario varchar(50) :=User;
+	Fecha	date := current_date;
+	Tiempo	time :=current_time;
+	
+	begin
+		insert into Log_Trigger values(new.nombre,new.nid,new.salario,Usuario,Fecha,Tiempo);
+
+return new;
+	End
+$$
+Language plpgsql;
+
+
+Create Trigger TR_Insert after insert on persona
+for each row
+execute procedure SP_TR_Insert();
+
+--COMO USAR LA CLAUSULA IN
+select * from persona
+where nid in('2','11','3')-->LO mismo que or pero mas sencillo
+
+select * from persona
+where nid =2 or nid =11
+
+
+
+
+--CREACION DE VIEWS (VISTAS)
+create view view_persona
+as select nombre,nid from persona
+
+
+select * from view_persona
+
+
+/***JOIN*******/
+INNER JOIN (Combinación interna)
+Con esta operación se combina los registros de ambas tablas según lo que se especifique en el predicado del JOIN, es el más utilizado.
+
+Los registros que vamos a obtener son todos aquellos en los que el campo común (id_producto) exista en las dos tablas. Los registros de la tabla producto que su id_producto no coincida con el id_producto de la tabla provincia y viceversa, los omite.
+
+SELECT * FROM producto INNER JOIN origen ON producto.id_producto = origen.id_producto;
+
+28/08/2018 BY JOSE SEGOVIA
+
+Ejemplos de JOIN en PostgreSQL
+Bienvenidos a una nueva semana, y con esto, a una nueva entrada de en nuestro blog formativo en PostgreSQL. En la entrada de hoy hablaremos de uno de los comandos más importantes en SQL, aplicado específicamente a nuestro motor de Base de Datos. Estudiaremos con ejemplos la utilización y ejecución de la joins; JOIN en PostgreSQL.
+
+Trataremos los diferentes tipos de JOIN uno a uno y mediante ejemplos sencillos y prácticos.
+
+Para ver más ejemplos de Join y conocer a fondo el tema, mira nuestro Curso de sentencias DDL, DML, DCL, TCL y el Curso de Métodos Avanzados de Creación de Tablas.
+
+El lenguaje SQL te permite combinar los registros de una o más tablas en un Sistema Gestor de Base de Datos Objeto Relacional (siglas en inglés ORDBMS) como PostgreSQL, mediante la sentencia JOIN. Disponemos de varios tipos de combinaciones de registros, combinación interna (INNER JOIN), combinación externa (OUTER JOIN) y producto cartesiano (CROSS JOIN).
+
+ 
+
+Empieza ahora apuntándote a nuestra academia online de PostgreSQL y no dejes escapar la oportunidad en convertirte en un DBA de PostgreSQL gracias a todos los cursos que tienes dentro de tu suscripción.
+ 
+
+En éste articulo se explican qué registros obtenemos con cada tipo de combinación junto a la sentencia y su resultado. Para ello partimos con dos tablas, ‘producto’ y ‘provincia’, con una serie de filas.
+
+
+
+--INNER JOIN (Combinación interna)
+Con esta operación se combina los registros de ambas tablas según lo que se especifique en el predicado del JOIN, es el más utilizado.
+
+Los registros que vamos a obtener son todos aquellos en los que el campo común (id_producto) exista en las dos tablas. Los registros de la tabla producto que su id_producto no coincida con el id_producto de la tabla provincia y viceversa, los omite.
+
+SELECT * FROM producto INNER JOIN origen ON producto.id_producto = origen.id_producto;
+
+
+
+ 
+
+OUTER JOIN (Combinación externa)
+Mediante esta operación no es necesario que una fila de una tabla tenga relación con la otra tabla que se combina. Existen tres tipos de combinaciones externas, el LEFT JOIN, RIGHT JOIN y el FULL JOIN.
+
+ 
+
+----LEFT OUTER JOIN
+El resultado de esta combinación contiene todos los registro de la tabla izquierda (la primera tabla que se menciona en la consulta) junto a todos los registros que coincida con la segunda tabla que se especifica en la sentencia.
+
+Vemos como obtenemos el producto ‘Kiwi’ que su id_producto no corresponde con ningún id_producto de la tabla origen, en su lugar aparece un nulo ya que no existe.
+
+SELECT * FROM producto LEFT JOIN origen ON producto.id_producto = origen.id_producto;
+
+---RIGTH OUTER JOIN
+Éste funciona igual que el anterior con la diferencia que los registros que te devuelve son los que coincidan en la tabla izquierda junto a todas las filas de la tabla de la derecha. Es el caso contrario.
+
+En éste caso obtenemos la provincia ‘Sevilla’ que no tiene ningún dato en la tabla producto, por ello nos aparece ese nulo, junto a todos los registros que su id_producto existen en ambas tablas.
+
+SELECT * FROM producto RIGHT JOIN origen ON producto.id_producto = origen.id_producto;
+
+---FULL OUTER JOIN
+Con éste tipo de combinación externa, vamos a retornar todos los registros que cumplan la condición más los registros de la primera tabla y la segunda tabla.
+
+En éste ejemplo se obtienen todas las filas de la tabla producto y todas las provincias, incluyendo aquellas tuplas que no existan en la otra tabla donde aparecerá un nulo.
+
+SELECT * FROM producto FULL JOIN origen ON producto.id_producto = origen.id_producto;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
